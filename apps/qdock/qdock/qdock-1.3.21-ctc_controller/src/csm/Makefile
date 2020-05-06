@@ -149,7 +149,7 @@ $(COMM_DIR):
 
 $(CSMD): $(CSMD_OBJS) $(LIBCSM)
 ifneq ($(PLATFORM), openwrt)
-	$(CC) $(LDFLAGS) -o $@ $(CSMD_OBJS) -lcsm -ldl  -pthread -ljson -lm
+	$(CC) $(LDFLAGS) -o $@ $(CSMD_OBJS) -lcsm -ldl  -pthread -ljson-c -lm
 else
 	$(CC) $(LDFLAGS) -o $@ $(CSMD_OBJS) -lcsm -ldl  -pthread -ljson-c -lm
 endif

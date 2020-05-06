@@ -17,11 +17,7 @@
 
 #include "map_common.h"
 #include "map_extcfg.h"
-#ifdef QTN_REMOTE_RPC_CALL
-#include "qcsapi.h"
-#else
-#include "qtn/qcsapi.h"
-#endif
+
 #include "map_extcfg_qtn.h"
 
 

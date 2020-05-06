@@ -1,47 +1,33 @@
-CC = $(CROSS)gcc
+CC ?= $(CROSS)gcc
 ifeq ($(ARCH), i386)
 	CC += -m32
 endif
 ifneq ($(PLATFORM), openwrt)
 ARCH ?= arc
 endif
-CSM_DIR ?= ../csm
 PWD = $(shell pwd)
 TARGET ?= $(PWD)/target
 
 CFLAGS += -I$(PWD) -I$(PWD)/../ -DLIST_H
-CFLAGS += -I$(CSM_DIR)/include
 CFLAGS += -fpic
 CFLAGS += -g
+
 ifneq ($(PLATFORM), openwrt)
 CFLAGS += -Werror
 CFLAGS += -Wall
 else
 CFLAGS += -Wno-unused-variable -Wimplicit-function-declaration -Wno-unused-parameter
-REMOTE_RPC_DIR = ../../qcsapi-1.0/libs
 endif
+
 CFLAGS += -fno-strict-aliasing
 CFLAGS += -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include
-ifeq ($(ARCH), arc)
-CFLAGS += -I$(SDK_DIR)/drivers/include/shared -I$(SDK_DIR)/include -I$(SDK_DIR)
-QCSAPI_LIB = qcsapi
-else
-ifndef REMOTE_RPC_DIR
-$(error $(ARCH) REMOTE_RPC_DIR needs to be specified when compiling MAPiQ at host side)
-endif
-CFLAGS += -I$(REMOTE_RPC_DIR)
-CFLAGS += -DQTN_REMOTE_RPC_CALL
-ifneq ($(PLATFORM), openwrt)
-LDFLAGS += -L$(REMOTE_RPC_DIR)
-else
-LDFLAGS += -L$(REMOTE_RPC_DIR) -lrpc
-endif
-QCSAPI_LIB = qcsapi_client
-endif
+
+#LDFLAGS += -lrpc
 
 ifeq ($(ARCH), amd64)
         CFLAGS += -DARCH_IS_64BITS
 endif
+
 ifeq ($(MAPIQ_DEVID_FORMAT), string)
 CFLAGS += -DMAPIQ_DEVID_STRING_FORMAT
 endif
@@ -71,9 +57,9 @@ $(MAPiQ_QTN): $(MAPiQ_QTN_OBJS)
 
 $(MAPiQ_QTN_EXTCFG): $(MAPiQ_QTN_EXTCFG_OBJS)
 ifneq ($(PLATFORM), openwrt)
-	${CC} $(LDFLAGS) -o $@ $^ -lubox -lubus -lz -l${QCSAPI_LIB}
+	${CC} $(LDFLAGS) -o $@ $^ -lubox -lubus -lz
 else
-	${CC} $(LDFLAGS) -o $@ $^ -lubox -lubus -lz -l$(QCSAPI_LIB)
+	${CC} $(LDFLAGS) -o $@ $^ -lubox -lubus -lz
 endif
 
 install: all qmesh_install
