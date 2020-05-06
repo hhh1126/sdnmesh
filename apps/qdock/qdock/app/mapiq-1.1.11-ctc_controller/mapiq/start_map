@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# This script is to start and stop MAPiQ as Agent or Controller.
+
+base_scripts="/scripts"
+. $base_scripts/start-helpers.sh
+[ -f /bin/import_qtnenv ] && . import_qtnenv
+hw_rev=$(cat /proc/hw_revision)
+is_bbic5=$(echo $hw_rev | grep "bbic5")
+security_path=/mnt/jffs2
+wfa_enable=$(get_wifi_config global wfa)
+
+kill_process()
+{
+	pid_name=$1
+	pid=`ps | grep "$pid_name" | grep -v "grep $pid_name" | awk '{print $1}'`
+	if [ -n "$pid" ]; then
+		kill $pid
+	fi
+}
+
+ignore_hw_pbc()
+{
+	enable=$1
+
+	if [ "$is_bbic5" != "" ]; then
+		for radx in 0 2
+		do
+			is_repeater=`call_qcsapi verify_repeater_mode $radx`
+			if [ "$is_repeater" == "1" ]; then
+				wpa_cli -i wifi"$radx"_0 ignore_hw_pbc $enable
+				hostapd_cli -i wifi"$radx"_1 ignore_hw_pbc $enable
+			else
+				hostapd_cli -i wifi"$radx"_0 ignore_hw_pbc $enable
+			fi
+		done
+	else
+		is_repeater=`call_qcsapi verify_repeater_mode`
+		if [ "$is_repeater" == "1" ]; then
+			wpa_cli -i wifi0 ignore_hw_pbc $enable
+			hostapd_cli -i wifi1 ignore_hw_pbc $enable
+		else
+			hostapd_cli -i wifi0 ignore_hw_pbc $enable
+		fi
+	fi
+}
+
+set_default_repeater_cascade_level()
+{
+	level=$1
+
+	is_repeater=`call_qcsapi verify_repeater_mode`
+	if [ "$is_repeater" == "1" ]; then
+		call_qcsapi set_urepeater_params max_level $level
+	fi
+}
+
+start()
+{
+	echo "Starting csmd..."
+	al_mac=`call_qcsapi get_mac_addr br0`
+	config_file=${security_path}/csmd.mapagent.json
+	if [ ! -f $config_file ]; then
+		cp -f /etc/csmd.mapagent.json $config_file
+	fi
+
+	if [ "$wfa_enable" == "1" ]; then
+		echo "update configs for WFA MAP testing"
+		map_file=${security_path}/map_conf.json
+		if [ ! -f $map_file ]; then
+			cp -f /etc/map_conf.json $map_file
+		fi
+		al_extra_cfg="-c $map_file"
+	fi
+
+	if [ "$1" == "controller" ]; then
+		al_extra_arg='-S'
+	fi
+
+	rm -f /tmp/qsl_*.playback
+	# default the driver will report the phy push button to wifi0
+	# MAP agent will take responsiable for push button, so ignore the event
+	ignore_hw_pbc 1
+	# default set max 2 cascade level for MAP over repeater mode
+	set_default_repeater_cascade_level 2
+	/scripts/cmdloop /usr/sbin/map_extcfg &
+	/scripts/cmdloop /usr/sbin/csmd -c $config_file &
+	sleep 5
+
+	interface_lists=`ifconfig | grep eth | awk '{print $1}' | sed -n -e 'H;${x;s/\n/,/g;s/^,//;p;}'`
+	/scripts/cmdloop /usr/sbin/al_entity $al_extra_arg -m $al_mac -i $interface_lists $al_extra_cfg &
+}
+
+stop()
+{
+	echo "Stopping csmd..."
+	kill_process "/bin/sh /scripts/cmdloop /usr/sbin/map_extcfg"
+	killall -9 map_extcfg 2>/dev/null
+	kill_process "/bin/sh /scripts/cmdloop /usr/sbin/csmd"
+	killall -9 csmd 2>/dev/null
+	kill_process "/bin/sh /scripts/cmdloop /usr/sbin/al_entity"
+	killall -9 al_entity 2>/dev/null
+
+	ignore_hw_pbc 0
+}
+
+restart()
+{
+	stop
+	start $1
+}
+
+print_usage()
+{
+	echo "Usage:"
+	echo -e "\t $0 <start|stop|restart> [role]"
+	echo ""
+	echo "[role]:"
+	echo -e "\tagent: start MAPiQ as Agent role."
+	echo -e "\tcontroller: start MAPiQ as Controller role."
+}
+
+case "$1" in
+	start)
+	start $2
+	;;
+	stop)
+	stop
+	;;
+	restart|reload)
+	restart $2
+	;;
+	*)
+	print_usage
+	exit 1
+esac
+
+exit $?

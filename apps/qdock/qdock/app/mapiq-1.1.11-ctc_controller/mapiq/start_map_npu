@@ -1,0 +1,116 @@
+#!/bin/sh
+
+# This script is to start and stop MAP Agent or Controller on NPU platform.
+
+if [ -f /usr/sbin/npu_cfg ]; then
+	source /usr/sbin/npu_cfg
+else
+	echo "Error: please config /usr/sbin/npu_cfg environment!"
+	exit
+fi
+
+if [ $# -ge 2 -a "$2" == "controller" ]; then
+	al_extra_arg='-S'
+else
+	al_extra_arg=
+fi
+
+set_default_repeater_cascade_level()
+{
+	level=$1
+	is_repeater=`call_qcsapi_sockrpc --host $board_bridge_ip verify_repeater_mode`
+	if [ "$is_repeater" == "1" ]; then
+		call_qcsapi_sockrpc --host $board_bridge_ip set_urepeater_params max_level $level
+	fi
+}
+
+run_deamon()
+{
+	prog_name=$1
+	prog_cmd=
+
+	for i in "$@"; do
+		prog_cmd="${prog_cmd} $i"
+	done
+
+	prog_exec=`which $prog_name`
+	if [ "$prog_exec" != "" ]; then
+		echo "exec parameters: $prog_cmd..."
+		$prog_cmd &
+	else
+		echo "Error: $prog_name doesn't exist!"
+		exit
+	fi
+}
+
+start()
+{
+	echo "Initialize and check environment variables..."
+	echo -e "\thost_bridge_name=$host_bridge_name"
+	echo -e "\thost_bridge_mac=$host_bridge_mac"
+	echo -e "\tboard_bridge_ip=$board_bridge_ip"
+
+	# set max cascade level=2 when it's repeater mode.
+	set_default_repeater_cascade_level 2
+
+	echo "Starting slave..."
+	slave_macaddr=`call_qcsapi_sockrpc --host $board_bridge_ip get_macaddr $board_bridge_name`
+	run_deamon rpecat -c netlink -r $slave_macaddr -i $host_bridge_name
+	sleep 1
+
+	echo "Starting MAPiQ plugin..."
+	run_deamon map_extcfg $board_bridge_ip
+	sleep 1
+
+	echo "Starting csmd..."
+	run_deamon csmd -c $host_csmd_config
+	sleep 5
+
+	echo "Starting al_entity..."
+	run_deamon al_entity -n $ni_interface -m $host_bridge_mac -i $ni_interface_list $al_extra_arg $al_extra_cfg $al_debug
+}
+
+stop()
+{
+	echo "Stopping master rpecat..."
+	killall -9 rpecat 2>/dev/null
+	echo "Stopping map_extcfg..."
+	killall -9 map_extcfg 2>/dev/null
+	echo "Stopping csmd..."
+	killall -9 csmd 2>/dev/null
+	echo "Stopping al_entity..."
+	killall -9 al_entity 2>/dev/null
+}
+
+restart()
+{
+	stop
+	start $1
+}
+
+print_usage()
+{
+	echo "Usage:"
+	echo -e "\t $0 <start|stop|restart> [role]"
+	echo ""
+	echo "[role]:"
+	echo -e "\tagent: start MAPiQ as Agent role."
+	echo -e "\tcontroller: start MAPiQ as Controller role."
+}
+
+case "$1" in
+	start)
+	start $2
+	;;
+	stop)
+	stop
+	;;
+	restart|reload)
+	restart $2
+	;;
+	*)
+	print_usage
+	exit 1
+esac
+
+exit $?

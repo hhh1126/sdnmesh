@@ -1,0 +1,137 @@
+#!/bin/sh
+
+# This script is to start and stop qdock apps.
+
+base_scripts="/scripts"
+. $base_scripts/start-helpers.sh
+[ -f /bin/import_qtnenv ] && . import_qtnenv
+[ -f $base_scripts/build_config ] && . $base_scripts/build_config
+is_bbic5=$(cat /proc/hw_revision | grep "bbic5")
+pcie=$(cat /proc/bootcfg/boardparam | grep "pcie" | awk '{print $2}')
+
+if [ $# -lt 2 ]; then
+        qdock_app=$(get_wifi_config global qsteer)
+else
+        qdock_app=$2
+fi
+
+if [ "${STATELESS}" == "y" ] || [ "${is_bbic5}" != "" -a "${pcie}" != "0" ] || [ "$qfdr_master_board" == "y" ]; then
+	qdock_app=slave
+fi
+
+if [ "${SPARTAN}" == "y" ]; then
+	qdock_app=$(get_wifi_config global qsteer)
+fi
+
+start_slave()
+{
+	if [ "$qfdr_master_board" == "y" ]; then
+		echo "Starting master rpecat..."
+		slave_macaddr=$(call_qcsapi_sockrpc --host $qfdr_remote_ip get_macaddr br0)
+		rpecat -c netlink -r $slave_macaddr &
+	else
+		echo "Starting rpecat..."
+		rpecat &
+	fi
+}
+
+stop_slave()
+{
+	echo "Stopping slave rpecat..."
+	killall rpecat 2>/dev/null
+}
+
+run_script()
+{
+	if [ -f /scripts/$1 ]; then
+		$1 $2
+	else
+		echo "missing script file /scripts/$1!"
+	fi
+}
+
+start()
+{
+	case "$qdock_app" in
+		1|soniq)
+			run_script start_soniq start
+			;;
+		mapagent)
+			run_script start_mapagent start
+			;;
+		mapcontroller)
+			run_script start_mapcontroller start
+			;;
+		spdia)
+			run_script start_spdia start
+			;;
+		slave)
+			start_slave
+			;;
+		*)
+			echo "qdock app $qdock_app do not recognized"
+			exit 1
+	esac
+}
+
+stop()
+{
+	case "$qdock_app" in
+		1|soniq)
+			run_script start_soniq stop
+			;;
+		mapagent)
+			run_script start_mapagent stop
+			;;
+		mapcontroller)
+			run_script start_mapcontroller stop
+			;;
+		spdia)
+			run_script start_spdia stop
+			;;
+		slave)
+			stop_slave
+			;;
+		*)
+			echo "qdock app $qdock_app do not recognized"
+			exit 1
+	esac
+}
+
+restart()
+{
+	stop
+	start
+}
+
+print_usage()
+{
+        echo "QDock Application Framework..."
+        echo "Usage:"
+        echo -e "\tstart_qdock <start|stop|restart> [qdock_app]"
+        echo ""
+        echo "[qdock_app]:"
+        echo -e "\tsoniq: Private self of network management application proprietary,"
+        echo -e "\t       also contains an implementation of Wi-Fi Alliance Multiband."
+        echo -e "\tmapagent: An implementation of Wi-Fi Alliance EasyMesh Agent."
+        echo -e "\tmapcontroller: An implementation of Wi-Fi Alliance EasyMesh Controller."
+        echo -e "\tspdia: Motion detection."
+        echo -e "\tslave: Exclusive as slave."
+}
+
+case "$1" in
+	start)
+	start
+	;;
+	stop)
+	stop
+	;;
+	restart|reload)
+	restart
+	;;
+	*)
+	print_usage
+	exit 1
+esac
+
+exit $?

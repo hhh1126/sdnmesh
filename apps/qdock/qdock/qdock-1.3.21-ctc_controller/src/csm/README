@@ -1,0 +1,48 @@
+Quantenna QSteer CSM
+
+This is release note for Quantenna QSteer CSM source engineering release
+package and it maybe laterly be included into Quantenna CDK release.
+
+WHAT IS CSM?
+ - CSM is stand for Client Steering Manager, it is a application running on
+   Linux user space. Its main function is intellegently control steering WiFi
+   device between APs(roaming) and radios(band steering).
+
+ON WHAT HARDWARE DOES IT RUN?
+ - Quantenna QSteer CSM is designed for using along with Quantenna WiFi
+   solutions. Current it support QSR1000 platforms.
+
+COMPILING the CSM:
+ - Set the correct env for toolchain
+    export SDK_DIR=~/quantenna-sdk-v37.4.0.56
+    export CROSS=/usr/local/ARC/gcc/bin/arc-linux-uclibc-
+    export ARCH=arc
+ - compile
+    make all
+ - generate runable binaries
+    make install
+
+Running the CSM
+ - CSM will including following binaries
+	usr/sbin/csmd - CSM main executable
+	usr/lib/libcsm.so - CSM runtime support library
+	usr/lib/libcfg_ext.so - Quantenna reference implementation of AP configuration APIs
+	usr/lib/libqsteer_comm_ext.so - APIs provided by Q-Comm-M
+	etc/csmd.conf - CSM configuration file
+	usr/lib/driver/*.so - driver plugin
+	usr/lib/comm/*.so - communication plugin
+	usr/lib/logic/*.so - intellegent steering logic plugin
+ - extract content from tarball make by 'make install' on root directory of target device
+ - running CSM
+	csmd -c /etc/csmd.conf
+	
+Development based on CSM
+ Customer can develop RPE and plugins for CSM by their own
+ - For RPE, RPE can be development to make non-Quantenna WiFi under control for
+   Quantenna QSteer CSM. For detail information on RPE, please refer
+   QTN_PeerEntity_specification document.
+ - For plugins, CSM support type of communication, steering logic. Please refer
+   include/qsteer.h for helper APIs definition which is used by plugins to
+   communication with CSM and also include/csm_core.h for data structures.
+ All the APIs/Data structures may change for envolve of CSM software
+ 

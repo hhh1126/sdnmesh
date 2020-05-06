@@ -1,0 +1,45 @@
+{
+	"logging":
+	{
+		"level":"info",
+		"output":"syslog"
+	},
+	"database":
+	{
+		"max_stadb_size":1024
+	},
+	"networks": [
+		{
+			"MDID": "00:00",
+			"logics": [
+				{
+					"name": "sl.qtn",
+					"parameters":
+					{
+						"steer_only11v_runtime":1,
+						"max_steerings":5,
+						"check_overloaded_bss":1,
+						"check_suffering_sta":1,
+						"min_rate_gain":120,
+						"excellent_rate_gain":200,
+						"allow_inefficient":0,
+						"log_level":"info",
+						"never_steer_list":""
+					}
+				}
+			]
+		}
+	],
+	"drivers": [
+		{"_comments": "leave drivers blank or * indicates support all drivers"},
+		{"name": "*"}
+	],
+	"communications": [
+		{
+			"name":"comm.qtn.inactive"
+		}
+	],
+	"miscs": [
+		{"name": "misc.qtn.csmdcli"}
+	]
+}

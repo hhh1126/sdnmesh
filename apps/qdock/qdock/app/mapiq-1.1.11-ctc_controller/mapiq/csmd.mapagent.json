@@ -1,0 +1,28 @@
+{
+	"logging":
+	{
+		"level":"info",
+		"output":"syslog"
+	},
+	"database":
+	{
+		"max_stadb_size":1024
+	},
+	"networks": [
+		{
+			"MDID": "00:00",
+			"logics": [
+				{
+					"name": "mapiq.qtn"
+				}
+			]
+		}
+	],
+	"drivers": [
+		{"_comments": "leave drivers blank or * indicates support all drivers"},
+		{"name": "*"}
+	],
+	"miscs": [
+		{"name": "misc.qtn.csmdcli"}
+	],
+}
