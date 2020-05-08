@@ -72,7 +72,7 @@ $(APP_BASE): info
 			-DCMAKE_AR=$(AR) \
 			-DCMAKE_NM=$(NM) \
 			-DCMAKE_RANLIB=$(RANLIB) \
-			-DCMAKE_PREFIX_PATH=$(STAGING_DIR) ; \
+			-DCMAKE_PREFIX_PATH=$(INSTALL_DIR) ; \
 	fi; \
 		make -j1
 	echo "Done building $(APP_BASE)"
