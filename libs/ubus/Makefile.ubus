@@ -1,0 +1,150 @@
+PWD:=$(shell pwd)
+TOPDIR:=$(PWD)
+BUILD_DIR:=$(TOPDIR)/build_dir
+TARGET_DIR:=$(TOPDIR)/target_dir
+STAGING_DIR:=$(TOPDIR)/target_dir
+
+TOOLCHAIN_PATH:=$(TOPDIR)/toolchains/crosstools-arm-gcc-5.5-linux-4.1-glibc-2.26-binutils-2.28.1
+CROSS:=arm-buildroot-linux-gnueabi
+CC:=$(TOOLCHAIN_PATH)/usr/bin/$(CROSS)-gcc
+AR:=$(TOOLCHAIN_PATH)/usr/bin/$(CROSS)-ar
+NM:=$(TOOLCHAIN_PATH)/usr/bin/$(CROSS)-nm
+STRIP:=$(TOOLCHAIN_PATH)/usr/bin/$(CROSS)-strip
+RANLIB:=$(TOOLCHAIN_PATH)/usr/bin/$(CROSS)-ranlib
+LD:=$(TOOLCHAIN_PATH)/usr/bin/$(CROSS)-ld
+
+CFLAGS  += -Wall
+
+CFLAGS  += -I$(TOOLCHAIN_PATH)/include -I$(TOOLCHAIN_PATH)/usr/include
+LDFLAGS += -L$(TOOLCHAIN_PATH)/lib -L$(TOOLCHAIN_PATH)/usr/lib
+
+CFLAGS  += -I$(STAGING_DIR)/include
+LDFLAGS += -L$(STAGING_DIR)/lib
+
+export LD_LIBRARY_PATH=$(TOOLCHAIN_PATH)/lib
+
+export PKG_CONFIG_SYSROOT_DIR=$(STAGING_DIR)
+export PKG_CONFIG_LIBDIR=$(STAGING_DIR)/lib
+
+PKG_JSON-C:=json-c-0.12.1
+PKG_LIBUBOX:=libubox-3c1b33b
+PKG_UBUS:=ubus-5bae22e
+
+.PHONY=all
+
+all: info prepare json-c libubox ubus
+
+info:
+	@echo "-->info"
+	@echo "TOPDIR         = $(TOPDIR)"
+	@echo "BUILD_DIR      = $(BUILD_DIR)"
+	@echo "TARGET_DIR     = $(TARGET_DIR)"
+	@echo "STAGING_DIR    = $(STAGING_DIR)"
+	@echo "TOOLCHAIN_PATH = $(TOOLCHAIN_PATH)"
+	@echo "CROSS   = $(CROSS)"
+	@echo "CC      = $(CC)"
+	@echo "AR      = $(AR)"
+	@echo "LD      = $(LD)"
+	@echo "CFLAGS  = $(CFLAGS)"
+	@echo "LDFLAGS = $(LDFLAGS)"
+	@echo " "
+
+prepare:
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(STAGING_DIR)
+	mkdir -p $(TARGET_DIR)
+	tar -zxf $(TOPDIR)/dl/$(PKG_JSON-C).tar.gz -C $(BUILD_DIR)
+	tar -zxf $(TOPDIR)/dl/$(PKG_LIBUBOX).tar.gz -C $(BUILD_DIR)
+	tar -zxf $(TOPDIR)/dl/$(PKG_UBUS).tar.gz -C $(BUILD_DIR)
+
+json-c:
+	cd $(BUILD_DIR)/$(PKG_JSON-C); \
+	./configure \
+		--enable-shared \
+		CC=$(CC) \
+		ac_cv_func_malloc_0_nonnull=yes \
+		ac_cv_func_realloc_0_nonnull=yes \
+		--host=$(CROSS) \
+		--prefix=$(TARGET_DIR)
+	cd $(BUILD_DIR)/$(PKG_JSON-C); \
+		make -j1
+	@echo "-->json-c install staging"
+	mkdir -p $(STAGING_DIR)/include/json
+	mkdir -p $(STAGING_DIR)/lib
+	cp -a $(BUILD_DIR)/$(PKG_JSON-C)/*.h            $(STAGING_DIR)/include/json/
+	cp -a $(BUILD_DIR)/$(PKG_JSON-C)/.libs/lib*.so* $(STAGING_DIR)/lib/
+	cp -a $(BUILD_DIR)/$(PKG_JSON-C)/.libs/lib*.a*  $(STAGING_DIR)/lib/
+	@echo "-->json-c install"
+	cp -a $(BUILD_DIR)/$(PKG_JSON-C)/.libs/lib*.so* $(TARGET_DIR)/lib/
+
+#-DCMAKE_INSTALL_PREFIX=/usr
+
+libubox:
+	@echo "-->libubox config"
+	cd $(BUILD_DIR)/$(PKG_LIBUBOX); \
+		CFLAGS="$(CFLAGS) " \
+		LDFLAGS="$(LDFLAGS) " \
+		cmake \
+			-DBUILD_LUA=OFF \
+			-DBUILD_EXAMPLES=OFF \
+			-DCMAKE_SYSTEM_NAME=Linux \
+			-DCMAKE_SYSTEM_PROCESSOR=arm \
+			-DCMAKE_C_COMPILER=$(CC) \
+			-DCMAKE_C_COMPILER_AR=$(AR) \
+			-DCMAKE_C_COMPILER_RANLIB=$(RANLIB) \
+			-DCMAKE_AR=$(AR) \
+			-DCMAKE_NM=$(NM) \
+			-DCMAKE_RANLIB=$(RANLIB) \
+			-DCMAKE_PREFIX_PATH=$(STAGING_DIR)
+	@echo "-->libubox make"
+	cd $(BUILD_DIR)/$(PKG_LIBUBOX); \
+		make -j1
+	@echo "-->libubox install staging"
+	mkdir -p $(STAGING_DIR)/include
+	mkdir -p $(STAGING_DIR)/lib
+	cp -a $(BUILD_DIR)/$(PKG_LIBUBOX)/*.h      $(STAGING_DIR)/include/
+	cp -a $(BUILD_DIR)/$(PKG_LIBUBOX)/lib*.so* $(STAGING_DIR)/lib/
+	cp -a $(BUILD_DIR)/$(PKG_LIBUBOX)/lib*.a*  $(STAGING_DIR)/lib/
+	@echo "-->libubox install"
+	mkdir -p $(TARGET_DIR)/lib
+	cp -a $(BUILD_DIR)/$(PKG_LIBUBOX)/lib*.so* $(TARGET_DIR)/lib/
+	cp -a $(BUILD_DIR)/$(PKG_LIBUBOX)/lib*.a*  $(TARGET_DIR)/lib/
+
+
+ubus:
+	@echo "-->ubus config"
+	cd $(BUILD_DIR)/$(PKG_UBUS); \
+		CFLAGS="$(CFLAGS) " \
+		LDFLAGS="$(LDFLAGS) " \
+		cmake \
+			-DBUILD_LUA=OFF \
+			-DBUILD_EXAMPLES=OFF \
+			-DCMAKE_SYSTEM_NAME=Linux \
+			-DCMAKE_SYSTEM_PROCESSOR=arm \
+			-DCMAKE_C_COMPILER=$(CC) \
+			-DCMAKE_C_COMPILER_AR=$(AR) \
+			-DCMAKE_C_COMPILER_RANLIB=$(RANLIB) \
+			-DCMAKE_AR=$(AR) \
+			-DCMAKE_NM=$(NM) \
+			-DCMAKE_RANLIB=$(RANLIB) \
+			-DCMAKE_PREFIX_PATH=$(STAGING_DIR)
+	@echo "-->ubus make"
+	cd $(BUILD_DIR)/$(PKG_UBUS); \
+		make -j1
+	@echo "-->ubus install staging"
+	mkdir -p $(STAGING_DIR)/include
+	mkdir -p $(STAGING_DIR)/lib
+	cp -a $(BUILD_DIR)/$(PKG_UBUS)/*.h $(STAGING_DIR)/include/
+	cp -a $(BUILD_DIR)/$(PKG_UBUS)/lib*.so* $(STAGING_DIR)/lib/
+	@echo "-->ubus install"
+	mkdir -p $(TARGET_DIR)/lib
+	mkdir -p $(TARGET_DIR)/bin
+	mkdir -p $(TARGET_DIR)/sbin
+	cp -a $(BUILD_DIR)/$(PKG_UBUS)/lib*.so* $(TARGET_DIR)/lib/
+	cp -a $(BUILD_DIR)/$(PKG_UBUS)/ubus $(TARGET_DIR)/bin/
+	cp -a $(BUILD_DIR)/$(PKG_UBUS)/ubusd $(TARGET_DIR)/sbin/
+
+
+clean:
+	rm -rf $(BUILD_DIR)
+	rm -rf $(TARGET_DIR)
