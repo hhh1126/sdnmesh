@@ -8,14 +8,14 @@ include $(BUILD_DIR)/make.common
 
 SDN_BUILD_DIR=$(BCM_FSBUILD_DIR)/sdn
 
-CFLAGS:=-I$(TOOLCHAIN_PATH)/include -I$(TOOLCHAIN_PATH)/usr/include 
+CFLAGS:=-I$(TOOLCHAIN_PATH)/include 
 CFLAGS:=-I$(SDN_BUILD_DIR)/include -I$(SDN_BUILD_DIR)/usr/include
 
-LDFLAGS+=-L$(TOOLCHAIN_PATH)/lib -L$(TOOLCHAIN_PATH)/usr/lib
+LDFLAGS+=-L$(TOOLCHAIN_PATH)/lib
 LDFLAGS+=-L$(SDN_BUILD_DIR)/lib -L$(SDN_BUILD_DIR)/usr/lib
 
 APP = libubox-3c1b33b
-APP_BASE = libubox-3c1b33b
+APP_BASE = libubox
 
 #export PKG_CONFIG_LIBDIR=$(SDN_BUILD_DIR)/lib
 #export PKG_CONFIG_PATH=$(SDN_BUILD_DIR)/lib/pkgconfig
@@ -23,35 +23,19 @@ APP_BASE = libubox-3c1b33b
 
 .PHONY: default $(APP_BASE) clean distclean
 
+# $(SDN_BUILD_DIR) - where to install the dependency files(*.h/*.so) for other moudles
+# $(INSTALL_DIR)   - where to install the target files(*.so/EXEC) for ROOT FS
 install: $(APP_BASE)
-	mkdir -p $(SDN_BUILD_DIR)/include/libubox/
+	echo "$(CURR_DIR)/Makefile -->install staging"
+	mkdir -p $(SDN_BUILD_DIR)/include/libubox
+	mkdir -p $(SDN_BUILD_DIR)/lib
 	cp -a $(APP)/*.h   $(SDN_BUILD_DIR)/include/libubox/
-	cp -a $(APP)/*.so* $(SDN_BUILD_DIR)/lib/
-	cp -a $(APP)/*.a* $(SDN_BUILD_DIR)/lib/
-	cp -a $(APP)/*.so* $(INSTALL_DIR)/lib/
-
-
-info:
-	@echo " "
-	@echo "hhutest -->info"
-	@echo "TOPDIR         = $(TOPDIR)"
-	@echo "BUILD_DIR      = $(BUILD_DIR)"
-	@echo "TARGET_DIR     = $(TARGET_DIR)"
-	@echo "STAGING_DIR    = $(STAGING_DIR)"
-	@echo "TOOLCHAIN_PREFIX= $(TOOLCHAIN_PREFIX)"
-	@echo "BCM_FSBUILD_DIR= $(BCM_FSBUILD_DIR)"
-	@echo "SDN_BUILD_DIR= $(SDN_BUILD_DIR)"
-	@echo "INSTALL_DIR= $(INSTALL_DIR)"
-	@echo "TOOLCHAIN_DIR= $(TOOLCHAIN_DIR)"
-	@echo "TOOLCHAIN_SYSROOT= $(TOOLCHAIN_SYSROOT)"
-	@echo "CROSS   = $(CROSS)"
-	@echo "CROSS_COMPILE = $(CROSS_COMPILE)"
-	@echo "CC      = $(CC)"
-	@echo "AR      = $(AR)"
-	@echo "LD      = $(LD)"
-	@echo "CFLAGS  = $(CFLAGS)"
-	@echo "LDFLAGS = $(LDFLAGS)"
-	@echo "info print "
+	cp -a $(APP)/libubox.so* $(SDN_BUILD_DIR)/lib/
+	cp -a $(APP)/libblobmsg_json.so* $(SDN_BUILD_DIR)/lib/
+	echo "$(CURR_DIR)/Makefile -->install target"
+	mkdir -p $(INSTALL_DIR)/lib
+	cp -a $(APP)/libubox.so* $(INSTALL_DIR)/lib/
+	cp -a $(APP)/libblobmsg_json.so* $(INSTALL_DIR)/lib/
 
 $(APP_BASE): info
 	@if [ ! -e $(APP)/config.log ]; then \
@@ -77,11 +61,37 @@ $(APP_BASE): info
 		make -j1
 	echo "Done building $(APP_BASE)"
 
-
 clean:
 	-make -C $(APP) clean
-	-rm -f $(INSTALL_DIR)/lib/$(APP_BASE).so*
+	echo "$(CURR_DIR)/Makefile -->clean staging"
+	-rm -rf $(SDN_BUILD_DIR)/include/libubox
+	-rm -f $(SDN_BUILD_DIR)/lib/libubox.so*
+	-rm -f $(SDN_BUILD_DIR)/lib/libblobmsg_json.so*
+	echo "$(CURR_DIR)/Makefile -->clean target"
+	-rm -f $(INSTALL_DIR)/lib/libubox.so*
+	-rm -f $(INSTALL_DIR)/lib/libblobmsg_json.so*
 
 distclean: clean
 	-rm -rf $(APP)
+
+info:
+	echo "$(curr_dir)/makefile -->info"
+	@echo "topdir         = $(topdir)"
+	@echo "build_dir      = $(build_dir)"
+	@echo "target_dir     = $(target_dir)"
+	@echo "staging_dir    = $(staging_dir)"
+	@echo "toolchain_prefix= $(toolchain_prefix)"
+	@echo "bcm_fsbuild_dir= $(bcm_fsbuild_dir)"
+	@echo "sdn_build_dir= $(sdn_build_dir)"
+	@echo "install_dir= $(install_dir)"
+	@echo "toolchain_dir= $(toolchain_dir)"
+	@echo "toolchain_sysroot= $(toolchain_sysroot)"
+	@echo "cross   = $(cross)"
+	@echo "cross_compile = $(cross_compile)"
+	@echo "cc      = $(cc)"
+	@echo "ar      = $(ar)"
+	@echo "ld      = $(ld)"
+	@echo "cflags  = $(cflags)"
+	@echo "ldflags = $(ldflags)"
+
 
