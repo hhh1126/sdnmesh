@@ -27,9 +27,6 @@ install: $(APP_BASE)
 	echo "$(CURR_DIR)/Makefile -->install target"
 	mkdir -p $(INSTALL_DIR)/lib
 	cp -a $(SDN_BUILD_DIR)/lib/libjson-c.so* $(INSTALL_DIR)/lib/
-#Fix me!!! install json-c to json, just for libubox compile
-	mkdir -p $(SDN_BUILD_DIR)/include/json
-	cp -a $(APP)/*.h $(SDN_BUILD_DIR)/include/json
 
 $(APP_BASE): info
 	@if [ ! -e $(APP)/config.log ]; then \
@@ -58,7 +55,6 @@ clean:
 	-rm -f $(SDN_BUILD_DIR)/lib/libjson-c.so*
 	echo "$(CURR_DIR)/Makefile -->clean target"
 	-rm -f $(INSTALL_DIR)/lib/libjson-c.so*
-	-rm -rf $(SDN_BUILD_DIR)/include/json
 
 distclean: clean
 	-rm -rf $(APP)
