@@ -1,5 +1,0 @@
-#!/bin/sh
-
-# This script is to start and stop MAP Controller on NPU platform.
-
-start_map_npu $1 controller

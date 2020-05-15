@@ -1,6 +1,0 @@
-config BR2_PACKAGE_QDOCK
-	bool "QDOCK"
-	default n
-	select BR2_PACKAGE_UBUS
-	help
-	  Quantenna QDocK framework.

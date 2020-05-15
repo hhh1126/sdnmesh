@@ -1,5 +1,0 @@
-#!/bin/sh
-
-# This script is to start and stop MAP Controller.
-
-start_map $1 controller
