@@ -1,0 +1,43 @@
+{
+    "ap_metrics_intval":5,
+    "assoc_sta_intval":5,
+    "unassoc_sta_intval":5,
+    "monitor_dwell":50,
+    "rcpi_margin":5,
+    "wait_roaming":10,
+    "unassoc_sta_maxnums":128,
+    "retries":2,
+    "wait_ack":1000,
+    "search_period":5,
+    "autoconf_wait":60,
+    "hide_backhaul_ssid":1,
+    "wsc_info":{
+        "manufacturer_name":"Quantenna",
+        "device_name":"Reference Design",
+        "model_name":"Topaz",
+        "model_number":"QV860.460",
+        "serial_number":"002686F0DCAA"
+    },
+    "bss_info":[
+        {
+            "al_mac":"00:26:86:f0:dc:aa",
+            "opclass":"11x",
+            "ssid":"Multi-AP-5G-1",
+            "auth_mode":"wpa2psk",
+            "encr_mode":"aes",
+            "key":"maprocks1",
+            "backhaul":0,
+            "fronthaul":1
+        },
+        {
+            "al_mac":"00:26:86:f0:dc:aa",
+            "opclass":"11x",
+            "ssid":"Multi-AP-5G-2",
+            "auth_mode":"wpa2psk",
+            "encr_mode":"aes",
+            "key":"maprocks1",
+            "backhaul":1,
+            "fronthaul":0
+        }
+    ]
+}

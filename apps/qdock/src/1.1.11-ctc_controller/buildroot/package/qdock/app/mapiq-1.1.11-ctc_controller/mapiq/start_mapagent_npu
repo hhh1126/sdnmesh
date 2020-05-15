@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# This script is to start and stop MAP Agent on NPU platform.
+
+start_map_npu $1 agent

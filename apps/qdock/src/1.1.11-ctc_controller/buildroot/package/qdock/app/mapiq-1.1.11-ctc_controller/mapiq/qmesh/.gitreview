@@ -1,0 +1,6 @@
+[gerrit]
+host=cow
+port=29418
+project=prplMesh.git
+defaultbranch=feature_ctc
+
