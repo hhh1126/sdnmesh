@@ -89,11 +89,13 @@
 #include <stdlib.h>  // exit
 #include <string.h>  // strtok
 #define __STRICT_ANSI__
-#ifdef Q_OPENWRT
+
+#ifdef USEJSONC
 #include "json-c/json.h"
-#else
-#include "json-c/json.h"
+#elif USEJSON
+#include "json/json.h"
 #endif
+
 #ifdef Q_STEERING_LOGIC
 #include "../../map_steering.h"
 #endif
