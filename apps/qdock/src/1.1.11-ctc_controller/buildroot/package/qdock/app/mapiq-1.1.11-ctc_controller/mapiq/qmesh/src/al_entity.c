@@ -1401,7 +1401,7 @@ void process_ALEvent(uint8_t *queue_message, uint8_t queue_id)
                         {
                             uint8_t authenticated;
                             uint8_t power_state;
-                            bool mcast_forward;
+                            bool mcast_forward = false;
 
                             struct interfaceInfo *x;
 
