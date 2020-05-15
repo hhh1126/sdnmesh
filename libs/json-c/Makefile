@@ -16,15 +16,19 @@ export PKG_CONFIG_SYSROOT_DIR=$(SDN_BUILD_DIR)
 
 .PHONY: default install $(APP_BASE) clean distclean
 
+# $(SDN_BUILD_DIR) - where to install the dependency files(*.h/*.so) for other moudles
+# $(INSTALL_DIR)   - where to install the target files(*.so/EXEC) for ROOT FS
 install: $(APP_BASE)
-	mkdir -p $(SDN_BUILD_DIR)/include/json
-	cp -a $(APP)/json.h $(SDN_BUILD_DIR)/include/json
-	cp -a $(APP)/.libs/*.so* $(SDN_BUILD_DIR)/lib/
-	cp -a $(APP)/.libs/*.a*  $(SDN_BUILD_DIR)/lib/
-	cp -a $(SDN_BUILD_DIR)/lib/*.so* $(INSTALL_DIR)/lib/
-	$(STRIP) $(INSTALL_DIR)/lib/*.so*
+	echo "$(CURR_DIR)/Makefile -->install staging"
+	mkdir -p $(SDN_BUILD_DIR)/include/json-c
+	mkdir -p $(SDN_BUILD_DIR)/lib
+	cp -a $(APP)/*.h $(SDN_BUILD_DIR)/include/json-c
+	cp -a $(APP)/.libs/libjson-c.so* $(SDN_BUILD_DIR)/lib/
+	echo "$(CURR_DIR)/Makefile -->install target"
+	mkdir -p $(INSTALL_DIR)/lib
+	cp -a $(SDN_BUILD_DIR)/lib/libjson-c.so* $(INSTALL_DIR)/lib/
 
-$(APP_BASE):
+$(APP_BASE): info
 	@if [ ! -e $(APP)/config.log ]; then \
 	    echo "Untarring original $(APP) source"; \
 	    tar zxf $(APP).tar.gz 2> /dev/null || true; \
@@ -46,11 +50,16 @@ $(APP_BASE):
 
 clean:
 	-make -C $(APP) clean
-	-rm -f $(INSTALL_DIR)/lib/$(APP_BASE).so*
+	echo "$(CURR_DIR)/Makefile -->clean staging"
+	-rm -rf $(SDN_BUILD_DIR)/include/json-c
+	-rm -f $(SDN_BUILD_DIR)/lib/libjson-c.so*
+	echo "$(CURR_DIR)/Makefile -->clean target"
+	-rm -f $(INSTALL_DIR)/lib/libjson-c.so*
 
 distclean: clean
 	-rm -rf $(APP)
 
-test:
-	echo $(MAKE)
-	echo $(CC)
+info:
+	echo "$(CURR_DIR)/Makefile -->info"
+	echo "INSTALL_DIR      $(INSTALL_DIR)"
+	echo "SDN_BUILD_DIR    $(SDN_BUILD_DIR)"
