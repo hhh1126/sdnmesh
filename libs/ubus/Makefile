@@ -8,14 +8,14 @@ include $(BUILD_DIR)/make.common
 
 SDN_BUILD_DIR=$(BCM_FSBUILD_DIR)/sdn
 
-CFLAGS:=-I$(TOOLCHAIN_PATH)/include -I$(TOOLCHAIN_PATH)/usr/include 
+CFLAGS:=-I$(TOOLCHAIN_PATH)/include
 CFLAGS:=-I$(SDN_BUILD_DIR)/include -I$(SDN_BUILD_DIR)/usr/include
 
-LDFLAGS+=-L$(TOOLCHAIN_PATH)/lib -L$(TOOLCHAIN_PATH)/usr/lib
+LDFLAGS+=-L$(TOOLCHAIN_PATH)/lib
 LDFLAGS+=-L$(SDN_BUILD_DIR)/lib -L$(SDN_BUILD_DIR)/usr/lib
 
 APP = ubus-5bae22e
-APP_BASE = ubus-5bae22e
+APP_BASE = ubus
 
 #export PKG_CONFIG_LIBDIR=$(SDN_BUILD_DIR)/lib
 #export PKG_CONFIG_PATH=$(SDN_BUILD_DIR)/lib/pkgconfig
@@ -23,20 +23,22 @@ APP_BASE = ubus-5bae22e
 
 .PHONY: default $(APP_BASE) clean distclean
 
+# $(SDN_BUILD_DIR) - where to install the dependency files(*.h/*.so) for other moudles
+# $(INSTALL_DIR)   - where to install the target files(*.so/EXEC) for ROOT FS
 install: $(APP_BASE)
-	mkdir -p $(SDN_BUILD_DIR)/include/
+	echo "$(CURR_DIR)/Makefile -->install staging"
+	mkdir -p $(SDN_BUILD_DIR)/include/ubus
+	cp -a $(APP)/*.h   $(SDN_BUILD_DIR)/include/ubus
+	cp -a $(APP)/libubus.so* $(SDN_BUILD_DIR)/lib/
+	echo "$(CURR_DIR)/Makefile -->install target"
 	mkdir -p $(INSTALL_DIR)/bin/
-	mkdir -p $(INSTALL_DIR)/sbin/
 	mkdir -p $(INSTALL_DIR)/lib/
-	cp -a $(APP)/*.h   $(SDN_BUILD_DIR)/include/
-	cp -a $(APP)/*.so* $(SDN_BUILD_DIR)/lib/
-	cp -a $(APP)/*.so* $(INSTALL_DIR)/lib/
+	cp -a $(APP)/libubus.so* $(INSTALL_DIR)/lib/
 	install -m 755 $(APP)/ubus  $(INSTALL_DIR)/bin/
-	install -m 755 $(APP)/ubusd $(INSTALL_DIR)/sbin/
+	install -m 755 $(APP)/ubusd $(INSTALL_DIR)/bin/
 
 info:
-	@echo " "
-	@echo "hhutest -->info"
+	echo "$(CURR_DIR)/Makefile -->info"
 	@echo "TOPDIR         = $(TOPDIR)"
 	@echo "BUILD_DIR      = $(BUILD_DIR)"
 	@echo "TARGET_DIR     = $(TARGET_DIR)"
@@ -82,11 +84,16 @@ $(APP_BASE): info
 	echo "Done building $(APP_BASE)"
 
 
-
-
 clean:
 	-make -C $(APP) clean
-	-rm -f $(INSTALL_DIR)/lib/$(APP_BASE).so*
+	echo "$(CURR_DIR)/Makefile -->clean staging"
+	-rm -rf $(SDN_BUILD_DIR)/include/libubus
+	-rm -f $(SDN_BUILD_DIR)/lib/libubus.so*
+	echo "$(CURR_DIR)/Makefile -->clean target"
+	-rm -f $(INSTALL_DIR)/lib/libubus.so*
+	-rm -f $(INSTALL_DIR)/bin/ubus
+	-rm -f $(INSTALL_DIR)/bin/ubusd
+
 
 distclean: clean
 	-rm -rf $(APP)
