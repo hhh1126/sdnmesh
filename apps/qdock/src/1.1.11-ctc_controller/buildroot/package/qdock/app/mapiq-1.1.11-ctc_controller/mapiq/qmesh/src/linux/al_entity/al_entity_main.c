@@ -92,7 +92,7 @@
 #ifdef Q_OPENWRT
 #include "json-c/json.h"
 #else
-#include "json/json.h"
+#include "json-c/json.h"
 #endif
 #ifdef Q_STEERING_LOGIC
 #include "../../map_steering.h"

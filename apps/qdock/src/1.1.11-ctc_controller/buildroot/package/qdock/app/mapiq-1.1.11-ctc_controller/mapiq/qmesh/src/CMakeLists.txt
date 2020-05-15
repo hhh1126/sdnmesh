@@ -188,10 +188,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
                 message(SEND_ERROR "QDOCK OpenWRT integration requires json-c")
             endif (NOT JSON-C)
         else ()
-            find_library(JSON json)
-            if (NOT JSON)
+            find_library(JSON-C json-c)
+            if (NOT JSON-C)
                 message(SEND_ERROR "QDOCK integration requires json")
-            endif (NOT JSON)
+            endif (NOT JSON-C)
         endif (Q_OPENWRT)
         target_sources(${libname} PRIVATE
             linux/platform_qdock.c
