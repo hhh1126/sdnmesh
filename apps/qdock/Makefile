@@ -6,39 +6,48 @@ BUILD_DIR:=$(word 1, $(BUILD_DIR))
 
 include $(BUILD_DIR)/make.common
 
-APP_QDOCK = quantenna-qdock-1.3.21-ctc_controller
-APP_MAPIQ = quantenna-qdock-mapiq-1.1.11-ctc_controller
 APP_BASE = qdock
 
+APP_MAPIQ_VER = 1.1.11-ctc_controller
+APP_MAPIQ = quantenna-qdock-mapiq-$(APP_MAPIQ_VER)
+QMESH_DIR = $(APP_BASE)/buildroot/package/qdock/app/mapiq-$(APP_MAPIQ_VER)/mapiq/qmesh
+
 SDN_BUILD_DIR=$(BCM_FSBUILD_DIR)/sdn
-#export PKG_CONFIG_LIBDIR=$(SDN_BUILD_DIR)/lib
-#export PKG_CONFIG_PATH=$(SDN_BUILD_DIR)/lib/pkgconfig
-#export PKG_CONFIG_SYSROOT_DIR=$(SDN_BUILD_DIR)
 
 .PHONY: default install $(APP_BASE) clean distclean
 
 install: $(APP_BASE)
-	mkdir -p $(SDN_BUILD_DIR)/include/
+	mkdir -p $(INSTALL_DIR)/bin
+	cp -a $(QMESH_DIR)/build/src/al_entity $(INSTALL_DIR)/bin
 
-$(APP_BASE):	
+
+$(APP_BASE): info
 	@if [ ! -e $(APP_BASE)/config.log ]; then \
-		echo "Untarring original $(APP_QDOCK) and $(APP_MAPIQ) source"; \
-		tar zxf $(APP_QDOCK).tar.gz --strip-components=3 2> /dev/null || true; \
-		tar zxf $(APP_MAPIQ).tar.gz --strip-components=3 2> /dev/null || true; \
-		echo "Building $(APP_BASE) to $(SDN_BUILD_DIR)/lib"; \
-		touch $(APP_BASE)/config.log; \
+		echo "original source $(APP_MAPIQ)"; \
+		mkdir -p $(APP_BASE) ; \
+		cp -a src/$(APP_MAPIQ_VER)/* ./$(APP_BASE)/ ; \
+		echo $(APP_MAPIQ) > $(APP_BASE)/config.log; \
 	fi
-	$(MAKE) -C $(APP_BASE) all \
-		ARCH=arm \
-		TARGET_CROSS=$(CROSS_COMPILE) \
-		TARGET_DIR=$(INSTALL_DIR) \
+
+	$(MAKE) -C $(QMESH_DIR) install \
+		ARCH=$(ARCH) \
+		CROSS=$(CROSS_COMPILE) \
+		TARGET=$(INSTALL_DIR) \
 		STAGING_DIR=$(SDN_BUILD_DIR) \
-		board_platform="ctcsdn"
 	echo "Done building $(APP_BASE)"
 
 clean:
 	-make -C $(APP_BASE) clean
-	-rm -f $(INSTALL_DIR)/lib/$(APP_BASE).so*
+	-rm -rf $(APP_BASE)/config.log
+	-rm -f $(INSTALL_DIR)/bin/al_entity
 
 distclean: clean
-	-rm -rf $(APP)
+	-rm -rf $(APP_BASE)
+
+info:
+	@echo "$(CURR_DIR)/Makefile -->info"
+	@echo "INSTALL_DIR      $(INSTALL_DIR)"
+	@echo "SDN_BUILD_DIR    $(SDN_BUILD_DIR)"
+	@echo "APP_MAPIQ        $(APP_MAPIQ)"
+	@echo "ARCH             $(ARCH)"
+	@echo "CROSS_COMPILE    $(CROSS_COMPILE)"
