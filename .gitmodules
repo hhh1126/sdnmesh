@@ -1,0 +1,3 @@
+[submodule "libs/flexbuild_lsdk2004"]
+	path = libs/flexbuild_lsdk2004
+	url = git@github.com:hhh1126/flexbuild_lsdk2004.git
